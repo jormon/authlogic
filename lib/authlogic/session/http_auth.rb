@@ -14,18 +14,20 @@ module Authlogic
           persist :persist_by_http_auth, :if => :persist_by_http_auth?
         end
       end
-      
+
       # Configuration for the HTTP basic auth feature of Authlogic.
       module Config
         # Do you want to allow your users to log in via HTTP basic auth?
         #
-        # I recommend keeping this enabled. The only time I feel this should be disabled is if you are not comfortable
-        # having your users provide their raw username and password. Whatever the reason, you can disable it here.
+        # I recommend keeping this disabled unless it is explicitly needed.
+        # Because of authlogic's extensibility, it's easy for this to bypass
+        # the new logic you have built into your models. Keep applications
+        # secure by defaulting access grants to false :)
         #
-        # * <tt>Default:</tt> true
+        # * <tt>Default:</tt> false
         # * <tt>Accepts:</tt> Boolean
         def allow_http_basic_auth(value = nil)
-          rw_config(:allow_http_basic_auth, value, true)
+          rw_config(:allow_http_basic_auth, value, false)
         end
         alias_method :allow_http_basic_auth=, :allow_http_basic_auth
 
@@ -64,14 +66,14 @@ module Authlogic
         end
         alias_method :http_basic_auth_realm=, :http_basic_auth_realm
       end
-      
+
       # Instance methods for the HTTP basic auth feature of authlogic.
       module InstanceMethods
         private
           def persist_by_http_auth?
             allow_http_basic_auth? && login_field && password_field
           end
-        
+
           def persist_by_http_auth
             login_proc = Proc.new do |login, password|
               if !login.blank? && !password.blank?
@@ -86,10 +88,10 @@ module Authlogic
             else
               controller.authenticate_with_http_basic(&login_proc)
             end
-        
+
             false
           end
-        
+
           def allow_http_basic_auth?
             self.class.allow_http_basic_auth == true
           end
